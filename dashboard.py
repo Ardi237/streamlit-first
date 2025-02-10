@@ -119,3 +119,4 @@ st.write("""
 5. **Perbedaan Pengguna** 🚴‍♂️  
    Pengguna terdaftar lebih dominan dibandingkan pengguna casual.
 """)
+`
