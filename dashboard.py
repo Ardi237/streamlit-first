@@ -30,15 +30,11 @@ with st.sidebar:
         value=[min_date_days, max_date_days]
     )
 
-# Konversi tanggal input ke datetime
-start_date = pd.to_datetime(start_date)
-end_date = pd.to_datetime(end_date)
-
 # Filter data berdasarkan tanggal
-main_df_days = days_df[(days_df["dteday"] >= start_date) & (days_df["dteday"] <= end_date)]
+main_df_days = days_df[(days_df["dteday"] >= str(start_date)) & (days_df["dteday"] <= str(end_date))]
 
 # Menghitung metrik utama
-total_sharing = main_df_days["cnt"].sum()
+total_sharing = main_df_days["count_cr"].sum()
 total_registered = main_df_days["registered"].sum()
 total_casual = main_df_days["casual"].sum()
 
@@ -59,39 +55,67 @@ st.markdown("---")
 
 # 1. Perbandingan Penyewaan Sepeda 2011 vs 2012
 st.subheader("📊 Perbandingan Peminjaman Sepeda antara 2011 dan 2012")
-yearly_rentals = days_df.groupby(days_df["dteday"].dt.year)["cnt"].sum()
+yearly_rentals = days_df.groupby(days_df["dteday"].dt.year)["count_cr"].sum()
 fig1, ax1 = plt.subplots()
 yearly_rentals.plot(kind='bar', color=["#4753a4", "#9c1d3b"], ax=ax1)
 ax1.set_xlabel("Tahun")
 ax1.set_ylabel("Total Peminjaman Sepeda")
+ax1.set_title("Perbandingan Peminjaman Sepeda antara 2011 dan 2012")
 st.pyplot(fig1)
 
 # 2. Tren Penyewaan Sepeda per Bulan
 st.subheader("📆 Tren Penyewaan Sepeda per Bulan")
-monthly_rentals = days_df.groupby(days_df["dteday"].dt.month)["cnt"].sum().reset_index()
+monthly_rentals = days_df.groupby(days_df["dteday"].dt.month)["count_cr"].sum().reset_index()
 fig2, ax2 = plt.subplots()
-sns.barplot(x=monthly_rentals["dteday"], y=monthly_rentals["cnt"], palette="Blues", ax=ax2)
-ax2.set_xticks(range(12))
-ax2.set_xticklabels(["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"])
+sns.barplot(x=monthly_rentals["dteday"], y=monthly_rentals["count_cr"], palette="Blues", ax=ax2)
+ax2.set_xlabel("Bulan")
+ax2.set_ylabel("Total Peminjaman Sepeda")
+ax2.set_title("Total Peminjaman Sepeda per Bulan")
 st.pyplot(fig2)
 
-# 3. Tren Penyewaan Sepeda Harian
+# 3. Tren Penyewaan Sepeda
 st.subheader("📈 Tren Penyewaan Sepeda Harian")
 chart = alt.Chart(main_df_days).mark_line(point=True).encode(
     x='dteday:T',
-    y='cnt:Q',
-    tooltip=['dteday', 'cnt']
+    y='count_cr:Q',
+    tooltip=['dteday', 'count_cr']
 ).interactive()
 st.altair_chart(chart, use_container_width=True)
 
 # 4. Pengaruh Cuaca terhadap Peminjaman Sepeda
 st.subheader("🌦️ Pengaruh Cuaca terhadap Peminjaman Sepeda")
-weather_rentals = days_df.groupby("weathersit")["cnt"].mean().reset_index()
+weather_rentals = days_df.groupby("weather_situation")["count_cr"].mean().reset_index()
 fig3, ax3 = plt.subplots()
-sns.barplot(x=weather_rentals["weathersit"], y=weather_rentals["cnt"], palette=["#A7C7E7", "#D3D3D3", "#E57373"], ax=ax3)
+sns.barplot(x=weather_rentals["weather_situation"], y=weather_rentals["count_cr"], palette=["#A7C7E7", "#D3D3D3", "#E57373"], ax=ax3)
+ax3.set_xlabel("Kondisi Cuaca")
+ax3.set_ylabel("Rata-rata Penyewaan Sepeda")
+ax3.set_title("Pengaruh Kondisi Cuaca terhadap Peminjaman Sepeda")
 st.pyplot(fig3)
+
+# 5. Pie Chart Perbandingan Pengguna
+st.subheader("👥 Perbandingan Pengguna Registered vs Casual")
+fig4, ax4 = plt.subplots()
+labels = ['Casual', 'Registered']
+sizes = [total_casual, total_registered]
+ax4.pie(sizes, labels=labels, autopct='%1.1f%%', colors=["#D3D3D3", "#90CAF9"], shadow=True, startangle=90)
+ax4.axis('equal')
+st.pyplot(fig4)
 
 st.markdown("---")
 st.markdown("📊 **Kesimpulan**")
-st.write("Dashboard menunjukkan tren peminjaman sepeda berdasarkan faktor cuaca, bulan, dan pengguna terdaftar vs casual.")
+st.write("""
+1. **Peningkatan Peminjaman dari Tahun ke Tahun** 📈  
+   Data menunjukkan tren positif dari 2011 ke 2012 dalam penggunaan sepeda.
 
+2. **Musim Panas sebagai Puncak Peminjaman** ☀️  
+   Jumlah peminjaman meningkat selama bulan-bulan hangat dan menurun saat musim dingin.
+
+3. **Pengaruh Cuaca** 🌤️🌧️  
+   Peminjaman lebih tinggi saat cuaca cerah dan berkurang drastis saat hujan.
+
+4. **Penggunaan Sepeda Relatif Stabil** 📅  
+   Tidak ada perbedaan signifikan antara hari kerja dan akhir pekan.
+
+5. **Perbedaan Pengguna** 🚴‍♂️  
+   Pengguna terdaftar lebih dominan dibandingkan pengguna casual.
+""")
